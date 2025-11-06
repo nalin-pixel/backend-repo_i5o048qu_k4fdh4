@@ -1,48 +1,36 @@
 """
 Database Schemas
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model below represents a MongoDB collection.
+Collection name = lowercase of class name (e.g., Product -> "product").
 """
-
 from pydantic import BaseModel, Field
-from typing import Optional
-
-# Example schemas (replace with your own):
-
-class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
-    email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+from typing import List, Optional
 
 class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
+    name: str = Field(..., description="Product name")
+    price: float = Field(..., ge=0, description="Price in USD")
+    rating: float = Field(0, ge=0, le=5, description="Average rating 0-5")
+    reviews: int = Field(0, ge=0, description="Number of reviews")
+    notes: Optional[str] = Field(None, description="Short aroma note summary")
+    image: Optional[str] = Field(None, description="Primary image URL")
+    description: Optional[str] = Field(None, description="Long description")
+    topNotes: List[str] = Field(default_factory=list, description="Top notes")
+    baseNotes: List[str] = Field(default_factory=list, description="Base notes")
+    in_stock: bool = Field(True, description="Whether product is available")
 
-# Add your own schemas here:
-# --------------------------------------------------
+class OrderItem(BaseModel):
+    product_id: str
+    qty: int = Field(..., ge=1)
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+class Customer(BaseModel):
+    name: str
+    email: str
+    address: Optional[str] = None
+
+class Order(BaseModel):
+    items: List[OrderItem]
+    customer: Customer
+    subtotal: float = Field(..., ge=0)
+    status: str = Field("pending", description="Order status: pending, paid, failed")
+    payment_ref: Optional[str] = Field(None, description="External payment reference if any")
